@@ -1,0 +1,80 @@
+body {
+    margin: 0;
+    font-family: "Trebuchet MS", sans-serif;
+    background: #5c94fc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+#board {
+    background-image: url("./flappybirdbg.png");
+    background-size: cover;
+    border: 6px solid #000;
+    box-shadow: 0 0 20px rgba(0,0,0,.4);
+}
+
+.screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.55);
+    z-index: 100;
+}
+
+.hidden {
+    display: none;
+}
+
+.panel {
+    background: #f8e8a6;
+    border: 6px solid #000;
+    padding: 30px;
+    min-width: 320px;
+    text-align: center;
+
+    box-shadow:
+        8px 8px 0 #000;
+}
+
+.panel h1 {
+    margin: 0;
+    color: #d62828;
+    font-size: 42px;
+    text-shadow: 2px 2px #fff;
+}
+
+.panel p {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#finalScore {
+    font-size: 28px;
+    margin: 20px 0;
+    color: #222;
+    font-weight: bold;
+}
+
+button {
+    padding: 12px 28px;
+    border: 4px solid black;
+    background: #ffcc00;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform .15s;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+.controls {
+    margin-top: 15px;
+    font-weight: bold;
+}
