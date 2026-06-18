@@ -13,10 +13,12 @@ let boardHeight = 640;
 let context;
 
 //bird
-let birdWidth = 34; //width/height ratio = 408/228 = 17/12
-let birdHeight = 24;
+let birdWidth = 150; //width/height ratio = 408/228 = 17/12
+let birdHeight = 100;
 let birdX = boardWidth/8;
-let birdY = boardHeight/2;
+let birdY = boardHeight/2 + 40;
+let hitboxPaddingX = 18;
+let hitboxPaddingY = 10;
 let birdImg;
 
 let bird = {
@@ -39,6 +41,7 @@ let bottomPipeImg;
 //physics
 let velocityX = -2; //pipes moving left speed
 let velocityY = 0; //bird jump speed
+let rotation = 0;
 let gravity = 0.4;
 
 let gameOver = false;
@@ -48,6 +51,7 @@ let wingSound = new Audio("./sfx_wing.wav");
 let hitSound = new Audio("./sfx_hit.wav");
 let bgm = new Audio("./bgm_mario.mp3");
 let poiintSound = new Audio("./sfx_point.wav");
+poiintSound.volume = 0.25;
 bgm.loop = true
 
 window.onload = function() {
@@ -65,7 +69,24 @@ window.onload = function() {
     birdImg = new Image();
     birdImg.src = "./flappybird.png";
     birdImg.onload = function() {
-        context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+        context.save();
+
+        context.translate(
+            bird.x + bird.width / 2,
+            bird.y + bird.height / 2
+        );
+
+        context.rotate(rotation);
+
+        context.drawImage(
+            birdImg,
+            -bird.width / 2,
+            -bird.height / 2,
+            bird.width,
+            bird.height
+        );
+
+        context.restore();
     }
 
     topPipeImg = new Image();
@@ -99,7 +120,7 @@ function startGame() {
 
         gameStarted = true;
         startScreen.classList.add("hidden");
-        pipeSpawner = setInterval(placePipes, 1500);
+        pipeSpawner = setInterval(placePipes, 2500);
         velocityY = -6;
 
         bgm.play();
@@ -118,7 +139,7 @@ function startGame() {
         score = 0;
         clearInterval(pipeSpawner);
 
-        pipeSpawner = setInterval(placePipes, 1500);
+        pipeSpawner = setInterval(placePipes, 2500);
 
         gameOver = false;
         gameStarted = true;
@@ -150,13 +171,24 @@ function update() {
 
     // STOP EVERYTHING until start
     if (!gameStarted) {
+        context.save();
+
+        context.translate(
+            bird.x + bird.width / 2,
+            bird.y + bird.height / 2
+        );
+
+        context.rotate(rotation);
+
         context.drawImage(
             birdImg,
-            bird.x,
-            bird.y,
+            -bird.width / 2,
+            -bird.height / 2,
             bird.width,
             bird.height
         );
+
+        context.restore();
         return;
     }
 
@@ -168,7 +200,31 @@ function update() {
     velocityY += gravity;
     // bird.y += velocityY;
     bird.y = Math.max(bird.y + velocityY, 0); //apply gravity to current bird.y, limit the bird.y to top of the canvas
-    context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+
+    if (velocityY < 0) {
+        rotation = -0.35; // nose up
+    } else {
+        rotation = Math.min(rotation + 0.03, 1.2);
+    }
+
+    context.save();
+
+    context.translate(
+        bird.x + bird.width / 2,
+        bird.y + bird.height / 2
+    );
+
+    context.rotate(rotation);
+
+    context.drawImage(
+        birdImg,
+        -bird.width / 2,
+        -bird.height / 2,
+        bird.width,
+        bird.height
+    );
+
+    context.restore();
 
     if (bird.y > board.height) {
         endGame();
@@ -180,7 +236,7 @@ function update() {
         pipe.x += velocityX;
         context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
 
-        if (!gameOver && !pipe.passed && bird.x > pipe.x + pipe.width) {
+        if (!gameOver && !pipe.passed && bird.x > pipe.x) {
             poiintSound.play();
             score += 0.5; //0.5 because there are 2 pipes! so 0.5*2 = 1, 1 for each set of pipes
             pipe.passed = true;
@@ -223,7 +279,7 @@ function placePipes() {
     // 0 -> -128 (pipeHeight/4)
     // 1 -> -128 - 256 (pipeHeight/4 - pipeHeight/2) = -3/4 pipeHeight
     let randomPipeY = pipeY - pipeHeight/4 - Math.random()*(pipeHeight/2);
-    let openingSpace = board.height/4;
+    let openingSpace = board.height/3;
 
     let topPipe = {
         img : topPipeImg,
@@ -257,7 +313,7 @@ function flap() {
         restartGame();
     }
 
-    velocityY = -6;
+    velocityY = -7;
     wingSound.play();
 }
 
@@ -278,8 +334,14 @@ function handleTouch(e) {
 }
 
 function detectCollision(a, b) {
-    return a.x < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
-           a.x + a.width > b.x &&   //a's top right corner passes b's top left corner
-           a.y < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
-           a.y + a.height > b.y;    //a's bottom left corner passes b's top left corner
+
+    let ax = a.x + hitboxPaddingX;
+    let ay = a.y + hitboxPaddingY;
+    let aw = a.width - hitboxPaddingX * 2;
+    let ah = a.height - hitboxPaddingY * 2;
+
+    return ax < b.x + b.width &&
+           ax + aw > b.x &&
+           ay < b.y + b.height &&
+           ay + ah > b.y;
 }
