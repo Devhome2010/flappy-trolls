@@ -1,4 +1,6 @@
 let gameStarted = false;
+let pipeSpawner;
+let highScore = 0;
 
 let startScreen;
 let gameOverScreen;
@@ -28,6 +30,8 @@ let bird = {
     height : birdHeight
 }
 
+let highScoreImg;
+
 //pipes
 let pipeArray = [];
 let pipeWidth = 64; //width/height ratio = 384/3072 = 1/8
@@ -51,7 +55,7 @@ let wingSound = new Audio("./sfx_wing.wav");
 let hitSound = new Audio("./sfx_hit.wav");
 let bgm = new Audio("./bgm_mario.mp3");
 let poiintSound = new Audio("./sfx_point.wav");
-poiintSound.volume = 0.25;
+poiintSound.volume = 0.5;
 bgm.loop = true
 
 window.onload = function() {
@@ -61,6 +65,8 @@ window.onload = function() {
     board.width = boardWidth;
     context = board.getContext("2d"); //used for drawing on the board
 
+    highScore = parseInt(localStorage.getItem("flappyHighScore")) || 0;
+
     //draw flappy bird
     // context.fillStyle = "green";
     // context.fillRect(bird.x, bird.y, bird.width, bird.height);
@@ -69,25 +75,11 @@ window.onload = function() {
     birdImg = new Image();
     birdImg.src = "./flappybird.png";
     birdImg.onload = function() {
-        context.save();
-
-        context.translate(
-            bird.x + bird.width / 2,
-            bird.y + bird.height / 2
-        );
-
-        context.rotate(rotation);
-
-        context.drawImage(
-            birdImg,
-            -bird.width / 2,
-            -bird.height / 2,
-            bird.width,
-            bird.height
-        );
-
-        context.restore();
+        context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
     }
+
+    highScoreImg = new Image();
+    highScoreImg.src = "./highsc.png";
 
     topPipeImg = new Image();
     topPipeImg.src = "./toppipe.png";
@@ -96,7 +88,6 @@ window.onload = function() {
     bottomPipeImg.src = "./bottompipe.png";
 
     requestAnimationFrame(update);
-    let pipeSpawner; //every 1.5 seconds
     document.addEventListener("keydown", moveBird);
 
      // Mobile support
@@ -127,7 +118,8 @@ function startGame() {
     }
 
     function showGameOverScreen() {
-        finalScore.textContent = "Score: " + Math.floor(score);
+        finalScore.innerHTML =
+            "Score: " + Math.floor(score) + "<br>High Score: " + highScore;
         gameOverScreen.classList.remove("hidden");
     }
 
@@ -152,9 +144,16 @@ function startGame() {
 
 function endGame() {
 
-    if (gameOver) return; // prevent running twice
+    if (gameOver) return;
 
     gameOver = true;
+
+    let finalRunScore = Math.floor(score);
+
+    if (finalRunScore > highScore) {
+        highScore = finalRunScore;
+        localStorage.setItem("flappyHighScore", highScore);
+    }
 
     bgm.pause();
     bgm.currentTime = 0;
@@ -170,25 +169,26 @@ function update() {
     context.clearRect(0, 0, board.width, board.height);
 
     // STOP EVERYTHING until start
-    if (!gameStarted) {
-        context.save();
-
-        context.translate(
-            bird.x + bird.width / 2,
-            bird.y + bird.height / 2
-        );
-
-        context.rotate(rotation);
-
+  if (!gameStarted) {
         context.drawImage(
             birdImg,
-            -bird.width / 2,
-            -bird.height / 2,
+            bird.x,
+            bird.y,
             bird.width,
             bird.height
         );
 
-        context.restore();
+    if (highScoreImg.complete) {
+        context.drawImage(highScoreImg, 12, 18, 34, 34);
+    }
+
+    context.textAlign = "left";
+    context.font = "bold 24px 'Trebuchet MS'";
+    context.strokeStyle = "white";
+    context.lineWidth = 3;
+    context.strokeText(highScore, 52, 45);
+    context.fillStyle = "black";
+    context.fillText(highScore, 52, 45);
         return;
     }
 
@@ -253,22 +253,36 @@ function update() {
         pipeArray.shift(); //removes first element from the array
     }
 
-    //score
-    context.font = "bold 52px 'Trebuchet MS'";
+    // ===== CURRENT SCORE (CENTERED) =====
+    let currentScoreText = Math.floor(score).toString();
 
+    context.font = "bold 52px 'Trebuchet MS'";
+    context.textAlign = "center";
     context.strokeStyle = "white";
     context.lineWidth = 4;
-    context.strokeText(Math.floor(score), 15, 55);
-
+    context.strokeText(currentScoreText, board.width / 2, 55);
     context.fillStyle = "black";
-    context.fillText(Math.floor(score), 15, 55);
+    context.fillText(currentScoreText, board.width / 2, 55);
 
-    if (gameOver) {
-        bgm.pause();
-        bgm.currentTime = 0
-        context.fillText("GAME OVER", 5, 90);
+    // ===== HIGH SCORE (LEFT WITH TROPHY ICON) =====
+    if (highScoreImg.complete) {
+        context.drawImage(highScoreImg, 12, 18, 34, 34);
     }
-}
+
+    context.textAlign = "left";
+    context.font = "bold 24px 'Trebuchet MS'";
+    context.strokeStyle = "white";
+    context.lineWidth = 3;
+    context.strokeText(highScore, 52, 45);
+    context.fillStyle = "black";
+    context.fillText(highScore, 52, 45);
+
+        if (gameOver) {
+            bgm.pause();
+            bgm.currentTime = 0
+            context.fillText("GAME OVER", 5, 90);
+        }
+    }
 
 function placePipes() {
     if (gameOver) {
